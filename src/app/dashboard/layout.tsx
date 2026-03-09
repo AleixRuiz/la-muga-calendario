@@ -1,10 +1,55 @@
-import { Calendar, Users, Settings } from "lucide-react";
+"use client";
+
+import { Calendar, Users, Settings, LogOut, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+      if (!session) {
+        router.push("/login");
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) {
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex justify-center items-center bg-gray-50">
+        <Loader2 className="animate-spin text-blue-500 h-8 w-8" />
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
   return (
     <div className="flex bg-gray-50 h-screen w-full overflow-hidden">
       {/* Sidebar Navigation (Hidden on mobile) */}
@@ -17,9 +62,16 @@ export default function DashboardLayout({
           <a href="/dashboard/team" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Equipo</a>
           <a href="/dashboard/settings" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Configuración</a>
         </nav>
-        <div className="p-4 border-t">
-          <div className="text-sm font-medium text-gray-900">Usuario Admin</div>
-          <div className="text-xs text-gray-500">Rol: Gerente</div>
+        <div className="p-4 border-t flex items-center justify-between">
+          <div className="truncate">
+            <div className="text-sm font-medium text-gray-900 truncate" title={session.user.email}>
+              {session.user.email}
+            </div>
+            <div className="text-xs text-gray-500">Rol: Gerente</div>
+          </div>
+          <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-colors ml-2" title="Cerrar sesión">
+            <LogOut size={18} />
+          </button>
         </div>
       </aside>
 

@@ -1,16 +1,33 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, MoreVertical, Search, Edit2, Trash2, X } from "lucide-react";
+import { Plus, MoreVertical, Search, Edit2, Trash2, X, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 type TeamMember = {
-  id: number;
-  name: string;
+  id: string; // Updated to match UUID from DB
+  first_name: string;
+  last_name: string;
   role: string;
-  email: string;
-  phone: string;
-  color: string;
-  hex: string;
+  email: string | null;
+  phone: string | null;
+  color_code: string;
+};
+
+// Map DB roles to UI labels and colors
+const ROLE_MAP: Record<string, { label: string; color: string; hex: string }> = {
+  'server': { label: 'Camarero', color: 'bg-blue-100 text-blue-800', hex: '#3b82f6' },
+  'kitchen': { label: 'Cocina', color: 'bg-emerald-100 text-emerald-800', hex: '#10b981' },
+  'general': { label: 'Personal General', color: 'bg-purple-100 text-purple-800', hex: '#a855f7' },
+  'manager': { label: 'Gerente', color: 'bg-red-100 text-red-800', hex: '#ef4444' },
+  'admin': { label: 'Admin', color: 'bg-gray-800 text-white', hex: '#1f2937' },
+};
+
+// Reverse map for the forms
+const REVERSE_ROLE_MAP: Record<string, string> = {
+  'Camarero': 'server',
+  'Cocina': 'kitchen',
+  'Personal General': 'general',
 };
 
 export default function TeamPage() {
@@ -18,36 +35,30 @@ export default function TeamPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Load from fake database (LocalStorage) over session
-    const storedTeam = localStorage.getItem("staff-app-team");
-    if (storedTeam) {
-      setTeam(JSON.parse(storedTeam));
-    } else {
-      const defaultTeam: TeamMember[] = [
-        { id: 1, name: "Juan Pérez", role: "Camarero", email: "juan@bar.com", phone: "+34 600 123 456", color: "bg-blue-100 text-blue-800", hex: "#3b82f6" },
-        { id: 2, name: "Ana Gómez", role: "Cocina", email: "ana@bar.com", phone: "+34 600 987 654", color: "bg-emerald-100 text-emerald-800", hex: "#10b981" },
-        { id: 3, name: "Carlos Ruiz", role: "Personal General", email: "carlos@bar.com", phone: "+34 600 111 222", color: "bg-purple-100 text-purple-800", hex: "#a855f7" },
-        { id: 4, name: "Lucía Fernández", role: "Camarero", email: "lucia@bar.com", phone: "+34 600 333 444", color: "bg-blue-100 text-blue-800", hex: "#3b82f6" },
-        { id: 5, name: "Miguel Torres", role: "Cocina", email: "miguel@bar.com", phone: "+34 600 555 666", color: "bg-emerald-100 text-emerald-800", hex: "#10b981" },
-        { id: 6, name: "Elena Vargas", role: "Personal General", email: "elena@bar.com", phone: "+34 600 777 888", color: "bg-purple-100 text-purple-800", hex: "#a855f7" },
-      ];
-      setTeam(defaultTeam);
-      localStorage.setItem("staff-app-team", JSON.stringify(defaultTeam));
-    }
-    setIsLoaded(true);
+    const fetchTeam = async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .order('created_at', { ascending: true });
+        
+      if (!error && data) {
+        setTeam(data as TeamMember[]);
+      } else {
+        console.error("Error fetching team:", error);
+      }
+      setIsLoaded(true);
+    };
+    
+    fetchTeam();
   }, []);
-
-  const saveTeam = (newTeam: TeamMember[]) => {
-    setTeam(newTeam);
-    localStorage.setItem("staff-app-team", JSON.stringify(newTeam));
-  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
-    name: "",
+    name: "", // Will split into first_name and last_name
     role: "Camarero",
     email: "",
     phone: ""
@@ -62,49 +73,90 @@ export default function TeamPage() {
 
   const openEditModal = (member: TeamMember) => {
     setEditingMember(member);
-    setFormData({ name: member.name, role: member.role, email: member.email, phone: member.phone });
+    const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ");
+    const uiRole = ROLE_MAP[member.role]?.label || "Personal General";
+    
+    setFormData({ 
+      name: fullName, 
+      role: uiRole, 
+      email: member.email || "", 
+      phone: member.phone || "" 
+    });
     setIsModalOpen(true);
     setActiveDropdown(null);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm("¿Estás seguro de que quieres eliminar a este empleado?")) {
-      saveTeam(team.filter(m => m.id !== id));
+      const { error } = await supabase.from('employees').delete().eq('id', id);
+      if (!error) {
+        setTeam(team.filter(m => m.id !== id));
+      } else {
+        alert("Error al eliminar: " + error.message);
+      }
     }
     setActiveDropdown(null);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     
-    const roleConfig: Record<string, {color: string, hex: string}> = {
-      "Camarero": { color: "bg-blue-100 text-blue-800", hex: "#3b82f6" },
-      "Cocina": { color: "bg-emerald-100 text-emerald-800", hex: "#10b981" },
-      "Personal General": { color: "bg-purple-100 text-purple-800", hex: "#a855f7" }
+    const dbRole = REVERSE_ROLE_MAP[formData.role] || 'general';
+    const hexColor = ROLE_MAP[dbRole]?.hex || '#3b82f6';
+    
+    // Split name
+    const nameParts = formData.name.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
+
+    const employeeData = {
+      first_name: firstName,
+      last_name: lastName,
+      role: dbRole,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      color_code: hexColor
     };
-    
-    const selectedRole = roleConfig[formData.role] || { color: "bg-gray-100 text-gray-800", hex: "#6b7280" };
 
     if (editingMember) {
-      saveTeam(team.map(m => m.id === editingMember.id ? { 
-        ...m, 
-        ...formData, 
-        color: selectedRole.color,
-        hex: selectedRole.hex
-      } : m));
+      const { data, error } = await supabase
+        .from('employees')
+        .update(employeeData)
+        .eq('id', editingMember.id)
+        .select()
+        .single();
+        
+      if (!error && data) {
+        setTeam(team.map(m => m.id === editingMember.id ? data as TeamMember : m));
+      } else if (error) {
+        alert("Error actualizando: " + error.message);
+      }
     } else {
-      const newId = team.length > 0 ? Math.max(...team.map(m => m.id)) + 1 : 1;
-      saveTeam([...team, { 
-        id: newId, 
-        ...formData, 
-        color: selectedRole.color,
-        hex: selectedRole.hex
-      }]);
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([employeeData])
+        .select()
+        .single();
+        
+      if (!error && data) {
+        setTeam([...team, data as TeamMember]);
+      } else if (error) {
+        alert("Error guardando: " + error.message);
+      }
     }
+    
+    setIsSaving(false);
     setIsModalOpen(false);
   };
 
-  if (!isLoaded) return null;
+  if (!isLoaded) {
+    return (
+      <div className="flex h-64 w-full items-center justify-center">
+        <Loader2 className="animate-spin text-blue-500 h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-2 md:p-6 pb-20 md:pb-6">
@@ -145,23 +197,27 @@ export default function TeamPage() {
               </tr>
             </thead>
             <tbody>
-              {team.map((member) => (
+              {team.map((member) => {
+                const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ");
+                const uiRole = ROLE_MAP[member.role] || ROLE_MAP['general'];
+                
+                return (
                 <tr key={member.id} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 uppercase">
-                        {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        {fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </div>
-                      <span className="font-medium text-gray-900">{member.name}</span>
+                      <span className="font-medium text-gray-900">{fullName}</span>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${member.color}`}>
-                      {member.role}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${uiRole.color}`}>
+                      {uiRole.label}
                     </span>
                   </td>
-                  <td className="p-4 text-gray-600">{member.email}</td>
-                  <td className="p-4 text-gray-600">{member.phone}</td>
+                  <td className="p-4 text-gray-600">{member.email || "-"}</td>
+                  <td className="p-4 text-gray-600">{member.phone || "-"}</td>
                   <td className="p-4 text-right relative">
                     <button 
                       onClick={() => setActiveDropdown(activeDropdown === member.id ? null : member.id)}
@@ -188,7 +244,7 @@ export default function TeamPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+              )})}
               {team.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-500">
