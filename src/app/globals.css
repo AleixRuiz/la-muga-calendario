@@ -12,15 +12,46 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Force Light Theme for now to prevent gray text on white backgrounds */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure FullCalendar titles and text are clearly visible */
+.fc .fc-toolbar-title {
+  color: #1f2937 !important; /* text-gray-800 */
+  font-weight: bold;
+}
+.fc .fc-col-header-cell-cushion, 
+.fc .fc-timegrid-axis-cushion, 
+.fc .fc-timegrid-slot-label-cushion {
+  color: #4b5563 !important; /* text-gray-600 */
+}
+
+/* FullCalendar mobile responsiveness */
+@media (max-width: 768px) {
+  .fc .fc-toolbar.fc-header-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  .fc .fc-toolbar-title {
+    font-size: 1.15rem !important;
+    text-align: center;
+  }
+  .fc .fc-button {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.6rem !important;
+  }
+  .fc-view-harness {
+    min-height: 450px !important;
+  }
+}
+
