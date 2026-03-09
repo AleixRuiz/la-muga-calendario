@@ -52,7 +52,8 @@ export default function DashboardCalendarPage() {
 
   useEffect(() => {
     let draggable: Draggable | null = null;
-    if (externalEventsRef.current && team.length > 0) {
+    // We only initialize Draggable once the DOM is fully loaded and elements are mapped
+    if (isLoaded && externalEventsRef.current && team.length > 0) {
       draggable = new Draggable(externalEventsRef.current, {
         itemSelector: ".fc-event",
         longPressDelay: 250,
@@ -73,7 +74,7 @@ export default function DashboardCalendarPage() {
     return () => {
       if (draggable) draggable.destroy();
     };
-  }, [team]);
+  }, [team, isLoaded]);
 
   const handleEventDrop = async (info: any) => {
     const shiftId = info.event.id;
