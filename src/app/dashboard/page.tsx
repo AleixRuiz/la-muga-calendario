@@ -9,6 +9,15 @@ import esLocale from "@fullcalendar/core/locales/es";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
+// Map DB roles to Spanish UI labels
+const ROLE_MAP: Record<string, string> = {
+  'server': 'Camarero',
+  'kitchen': 'Cocina',
+  'general': 'Personal General',
+  'manager': 'Gerente',
+  'admin': 'Admin',
+};
+
 export default function DashboardCalendarPage() {
   const externalEventsRef = useRef<HTMLDivElement>(null);
 
@@ -24,7 +33,8 @@ export default function DashboardCalendarPage() {
         setTeam(employeesData.map(emp => ({
           id: emp.id,
           name: [emp.first_name, emp.last_name].filter(Boolean).join(" "),
-          role: emp.role,
+          role: ROLE_MAP[emp.role] || 'Personal General', // Translated right here!
+          db_role: emp.role, // Keep original for backend logic
           hex: emp.color_code || "#3b82f6",
         })));
       }
@@ -161,7 +171,7 @@ export default function DashboardCalendarPage() {
             <div
               key={member.id}
               data-id={member.id}
-              data-role={member.role}
+              data-role={member.db_role} // Use the underlying english db role for Supabase inserts
               className="fc-event cursor-move py-1.5 px-2.5 md:p-3 border rounded-full xl:rounded-lg font-medium flex items-center gap-2 flex-shrink-0 snap-start"
               data-color={member.hex || "#6b7280"}
               style={{ backgroundColor: member.hex ? `${member.hex}15` : '#f3f4f6', borderColor: member.hex ? `${member.hex}40` : '#e5e7eb', color: member.hex }}
