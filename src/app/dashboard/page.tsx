@@ -11,11 +11,11 @@ import { Loader2 } from "lucide-react";
 
 // Map DB roles to Spanish UI labels
 const ROLE_MAP: Record<string, string> = {
-  'server': 'Camarero',
-  'kitchen': 'Cocina',
-  'general': 'Personal General',
-  'manager': 'Gerente',
-  'admin': 'Admin',
+  'server': "Camarero",
+  'kitchen': "Cocina",
+  'general': "Personal General",
+  'manager': "Gerente",
+  'admin': "Admin",
 };
 
 export default function DashboardCalendarPage() {
@@ -24,17 +24,26 @@ export default function DashboardCalendarPage() {
   const [team, setTeam] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [barConfig, setBarConfig] = useState({ open: "08:00:00", close: "24:00:00" });
 
   useEffect(() => {
     const fetchData = async () => {
+      const { data: configData } = await supabase.from('bar_config').select('*').limit(1).maybeSingle();
+      if (configData) {
+        setBarConfig({
+          open: configData.opening_time || "08:00:00",
+          close: configData.closing_time || "24:00:00"
+        });
+      }
+
       // 1. Fetch employees
       const { data: employeesData } = await supabase.from('employees').select('*');
       if (employeesData) {
         setTeam(employeesData.map(emp => ({
           id: emp.id,
           name: [emp.first_name, emp.last_name].filter(Boolean).join(" "),
-          role: ROLE_MAP[emp.role] || 'Personal General', // Translated right here!
-          db_role: emp.role, // Keep original for backend logic
+          role: ROLE_MAP[emp.role] || "Personal General",
+          db_role: emp.role, 
           hex: emp.color_code || "#3b82f6",
         })));
       }
@@ -62,7 +71,6 @@ export default function DashboardCalendarPage() {
 
   useEffect(() => {
     let draggable: Draggable | null = null;
-    // We only initialize Draggable once the DOM is fully loaded and elements are mapped
     if (isLoaded && externalEventsRef.current && team.length > 0) {
       draggable = new Draggable(externalEventsRef.current, {
         itemSelector: ".fc-event",
@@ -139,7 +147,7 @@ export default function DashboardCalendarPage() {
   };
 
   const handleEventClick = async (clickInfo: any) => {
-    if (confirm(`¿Estás seguro de que quieres eliminar este turno?`)) {
+    if (confirm('¿Estás seguro de que quieres eliminar este turno?')) {
       const { error } = await supabase.from('shifts').delete().eq('id', clickInfo.event.id);
       
       if (!error) {
@@ -148,6 +156,15 @@ export default function DashboardCalendarPage() {
         alert("Error al eliminar");
       }
     }
+  };
+
+  // Helper to format late-night hours properly for FullCalendar (e.g. 02:00 -> 26:00)
+  const getSlotMaxTime = (time: string) => {
+    const hour = parseInt(time.split(':')[0]);
+    if (hour >= 0 && hour <= 6) {
+      return `${hour + 24}:00:00`;
+    }
+    return time;
   };
 
   if (!isLoaded) {
@@ -171,7 +188,7 @@ export default function DashboardCalendarPage() {
             <div
               key={member.id}
               data-id={member.id}
-              data-role={member.db_role} // Use the underlying english db role for Supabase inserts
+              data-role={member.db_role}
               className="fc-event cursor-move py-1.5 px-2.5 md:p-3 border rounded-full xl:rounded-lg font-medium flex items-center gap-2 flex-shrink-0 snap-start"
               data-color={member.hex || "#6b7280"}
               style={{ backgroundColor: member.hex ? `${member.hex}15` : '#f3f4f6', borderColor: member.hex ? `${member.hex}40` : '#e5e7eb', color: member.hex }}
@@ -190,7 +207,7 @@ export default function DashboardCalendarPage() {
           ))}
           {team.length === 0 && (
             <div className="text-xs text-gray-400 text-center mt-4">
-              Ve a "Equipo" para añadir personal
+              Ve a &quot;Equipo&quot; para añadir personal
             </div>
           )}
         </div>
@@ -216,8 +233,8 @@ export default function DashboardCalendarPage() {
           eventReceive={handleEventReceive}
           eventClick={handleEventClick}
           height="100%"
-          slotMinTime="08:00:00"
-          slotMaxTime="24:00:00"
+          slotMinTime={barConfig.open}
+          slotMaxTime={getSlotMaxTime(barConfig.close)}
           longPressDelay={250}
           eventLongPressDelay={250}
           selectLongPressDelay={250}
