@@ -115,6 +115,31 @@ export default function DashboardCalendarPage() {
     }
   };
 
+  const handleEventResize = async (info: any) => {
+    const shiftId = info.event.id;
+    
+    // Fallback just in case, but resize should usually have an end limit naturally given by the UI
+    const updatedEndStr = info.event.endStr || new Date(info.event.start.getTime() + 8 * 60 * 60 * 1000).toISOString();
+    
+    const { error } = await supabase.from('shifts')
+      .update({
+        start_time: info.event.startStr,
+        end_time: updatedEndStr,
+      })
+      .eq('id', shiftId);
+
+    if (error) {
+      alert("Error al redimensionar el turno");
+      info.revert();
+    } else {
+      setEvents((prev) => prev.map(ev =>
+        ev.id === shiftId
+          ? { ...ev, start: info.event.startStr, end: updatedEndStr }
+          : ev
+      ));
+    }
+  };
+
   const handleEventReceive = async (info: any) => {
     const userId = info.event.extendedProps.user_id;
     const userRole = info.event.extendedProps.role || 'general';
@@ -232,6 +257,7 @@ export default function DashboardCalendarPage() {
           eventDrop={handleEventDrop}
           eventReceive={handleEventReceive}
           eventClick={handleEventClick}
+          eventResize={handleEventResize}
           height="100%"
           slotMinTime={barConfig.open}
           slotMaxTime={getSlotMaxTime(barConfig.close)}
