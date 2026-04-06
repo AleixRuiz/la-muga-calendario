@@ -61,7 +61,7 @@ export default function DashboardLayout({
           <a href="/dashboard" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700 font-medium">Calendario</a>
           <a href="/dashboard/team" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Equipo</a>
           <a href="/dashboard/reports" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Reportes</a>
-          <a href="/dashboard/settings" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Configuración</a>
+          <a href="/dashboard/settings" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">ConfiguraciÃ³n</a>
         </nav>
         <div className="p-4 border-t flex items-center justify-between">
           <div className="truncate">
@@ -70,7 +70,7 @@ export default function DashboardLayout({
             </div>
             <div className="text-xs text-gray-500">Rol: Gerente</div>
           </div>
-          <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-colors ml-2" title="Cerrar sesión">
+          <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-colors ml-2" title="Cerrar sesiÃ³n">
             <LogOut size={18} />
           </button>
         </div>
