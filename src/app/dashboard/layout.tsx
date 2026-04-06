@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Users, Settings, LogOut, Loader2 } from "lucide-react";
+import { Calendar, Users, Settings, LogOut, Loader2, BarChart3 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -58,8 +58,9 @@ export default function DashboardLayout({
           <h1 className="text-xl font-bold text-gray-800">Gestor de Personal</h1>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2">
-          <a href="/dashboard" className="block px-4 py-2 rounded bg-blue-50 text-blue-700 font-medium">Calendario</a>
+          <a href="/dashboard" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700 font-medium">Calendario</a>
           <a href="/dashboard/team" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Equipo</a>
+          <a href="/dashboard/reports" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Reportes</a>
           <a href="/dashboard/settings" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Configuración</a>
         </nav>
         <div className="p-4 border-t flex items-center justify-between">
@@ -99,6 +100,10 @@ export default function DashboardLayout({
           <Users size={22} />
           <span className="font-medium">Equipo</span>
         </a>
+        <a href="/dashboard/reports" className="flex flex-col items-center gap-1 p-2 w-full text-center hover:text-blue-600 focus:text-blue-600 active:bg-blue-50 transition-colors">
+          <BarChart3 size={22} />
+          <span className="font-medium">Reportes</span>
+        </a>
         <a href="/dashboard/settings" className="flex flex-col items-center gap-1 p-2 w-full text-center hover:text-blue-600 focus:text-blue-600 active:bg-blue-50 transition-colors">
           <Settings size={22} />
           <span className="font-medium">Ajustes</span>
@@ -107,3 +112,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+
