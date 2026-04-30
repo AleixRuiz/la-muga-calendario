@@ -136,7 +136,7 @@ export default function ProductExplorerPage() {
           <h1 className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             Explorador de Productos
           </h1>
-          <div className="flex items-center bg-gray-100 p-1 rounded-lg">
+          <div className="flex flex-wrap items-center bg-gray-100 p-1 rounded-lg gap-1">
             <button onClick={() => setViewMode("all")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'all' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>Todos</button>
             <button onClick={() => setViewMode("bottom10")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'bottom10' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>Top 10 menos vendidos</button>
             <button onClick={() => setViewMode("unsold")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'unsold' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>Productos no vendidos (0)</button>
@@ -194,7 +194,7 @@ export default function ProductExplorerPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
+              <thead className="hidden md:table-header-group">
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100" onClick={() => requestSort('product')}>
                     <div className="flex items-center gap-2">Producto {getSortIcon('product')}</div>
@@ -210,20 +210,32 @@ export default function ProductExplorerPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="block md:table-row-group">
                 {filteredAndSortedProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-6 text-center text-gray-500">
+                  <tr className="block md:table-row">
+                    <td colSpan={4} className="block md:table-cell p-6 text-center text-gray-500">
                       No se encontraron resultados.
                     </td>
                   </tr>
                 ) : (
                   filteredAndSortedProducts.map((p, i) => (
-                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="p-4 font-medium text-gray-800">{p.product}</td>
-                      <td className="p-4 text-sm text-gray-500">{p.category}</td>
-                      <td className="p-4 font-semibold">{p.sales}</td>
-                      <td className="p-4 text-emerald-600 font-semibold">{Number(p.total).toFixed(2)} €</td>
+                    <tr key={i} className="block md:table-row border-b border-gray-100 hover:bg-gray-50 transition-colors p-4 md:p-0">
+                      <td className="block md:table-cell p-1 md:p-4">
+                        <div className="md:hidden text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Producto</div>
+                        <div className="font-medium text-gray-800">{p.product}</div>
+                      </td>
+                      <td className="block md:table-cell p-1 md:p-4">
+                        <div className="md:hidden text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Categoría</div>
+                        <div className="text-sm text-gray-500">{p.category}</div>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center p-1 md:p-4">
+                        <div className="md:hidden text-xs font-semibold text-gray-400 uppercase tracking-wider">Ventas</div>
+                        <div className="font-semibold">{p.sales}</div>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center p-1 md:p-4">
+                        <div className="md:hidden text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</div>
+                        <div className="text-emerald-600 font-semibold">{Number(p.total).toFixed(2)} €</div>
+                      </td>
                     </tr>
                   ))
                 )}
