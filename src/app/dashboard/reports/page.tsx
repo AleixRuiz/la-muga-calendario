@@ -22,10 +22,11 @@ export default function ReportsPage() {
   const [weekDayData, setWeekDayData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>("ALL");
 
   useEffect(() => {
     const fetchData = async () => {
-      
+      setLoading(true);
       // 1. Fetch ALL tickets bypassing the 1000 limit
       let allTickets: any[] = [];
       let hasMore = true;
@@ -52,6 +53,11 @@ export default function ReportsPage() {
         } else {
           hasMore = false;
         }
+      }
+      
+      // Filter by month if selected
+      if (selectedMonth !== "ALL") {
+        allTickets = allTickets.filter(t => t.date && t.date.startsWith(selectedMonth));
       }
       
       let totSales = 0;
@@ -100,31 +106,49 @@ export default function ReportsPage() {
       setWeekDayData(sortedWeekDays);
 
       // 2. Fetch Top Categories
-      const { data: categories } = await supabase
-        .from("sales_categories")
-        .select("category, total")
-        .order("total", { ascending: false });
+      let catQuery = supabase.from("sales_categories").select("category, total");
+      if (selectedMonth !== "ALL") {
+        catQuery = catQuery.eq("month", selectedMonth);
+      }
+      const { data: categories } = await catQuery;
         
       if (categories) {
-        setCategoryData(categories.map(c => ({ name: c.category, value: Number(c.total) })));
+        // Aggregate categories logic since duplicate names may exist across months
+        const catMap = new Map();
+        categories.forEach(c => {
+          catMap.set(c.category, (catMap.get(c.category) || 0) + Number(c.total));
+        });
+        const catArray = Array.from(catMap.entries()).map(([name, value]) => ({ name, value }));
+        // Sort descending
+        catArray.sort((a,b) => b.value - a.value);
+        setCategoryData(catArray);
       }
 
       // 3. Fetch Top Products
-      const { data: products } = await supabase
-        .from("sales_products")
-        .select("product, total, category")
-        .order("total", { ascending: false })
-        .limit(10);
+      let prodQuery = supabase.from("sales_products").select("product, total, category");
+      if (selectedMonth !== "ALL") {
+        prodQuery = prodQuery.eq("month", selectedMonth);
+      }
+      const { data: products } = await prodQuery;
 
       if (products) {
-        setTopProducts(products);
+        // Aggregate values if multiple months exist logic
+        const prodMap = new Map();
+        products.forEach(p => {
+          const existing = prodMap.get(p.product) || { product: p.product, total: 0, category: p.category };
+          existing.total += Number(p.total);
+          prodMap.set(p.product, existing);
+        });
+        const prodArray = Array.from(prodMap.values());
+        prodArray.sort((a,b) => b.total - a.total);
+        setTopProducts(prodArray.slice(0, 10));
       }
 
       setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [selectedMonth]);
 
   if (loading) {
     return (
@@ -145,8 +169,19 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Análisis de Negocio
           </h1>
-          <div className="bg-white border rounded-lg px-4 py-2 shadow-sm text-sm font-medium text-blue-700 flex items-center gap-2 border-blue-100">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Histórico Completo ({metrics.totalTickets} tickets)
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-white border rounded-lg px-4 py-2 shadow-sm text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="ALL">Todo el Histórico</option>
+              <option value="2026-03">Marzo 2026</option>
+              <option value="2026-04">Abril 2026</option>
+            </select>
+            <div className="bg-white border rounded-lg px-4 py-2 shadow-sm text-sm font-medium text-blue-700 flex items-center gap-2 border-blue-100">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Histórico ({metrics.totalTickets} tickets)
+            </div>
           </div>
       </div>
 

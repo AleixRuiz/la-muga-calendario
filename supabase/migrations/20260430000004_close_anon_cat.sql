@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anon insert sales_catalogo" ON "public"."sales_catalogo";

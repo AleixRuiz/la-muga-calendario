@@ -61,6 +61,7 @@ export default function DashboardLayout({
           <a href="/dashboard" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700 font-medium">Calendario</a>
           <a href="/dashboard/team" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Equipo</a>
           <a href="/dashboard/reports" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Reportes</a>
+          <a href="/dashboard/explorer" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">Explorador Prod</a>
           <a href="/dashboard/settings" className="block px-4 py-2 rounded hover:bg-gray-50 text-gray-700">ConfiguraciÃ³n</a>
         </nav>
         <div className="p-4 border-t flex items-center justify-between">
